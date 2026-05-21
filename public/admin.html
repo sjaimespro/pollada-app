@@ -1,22 +1,163 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Admin</title></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin PRO</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #f4f6f9;
+}
+
+.header {
+  background: #1f7a63;
+  color: white;
+  padding: 15px;
+  text-align: center;
+}
+
+.container {
+  padding: 10px;
+}
+
+.card {
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+button {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.save {
+  background: #1f7a63;
+  color: white;
+  width: 100%;
+}
+
+.delete {
+  background: red;
+  color: white;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.add {
+  background: #007bff;
+  color: white;
+  width: 100%;
+  margin-top: 10px;
+}
+</style>
+
+</head>
+
 <body>
-<h2>Panel Admin</h2>
-<form id="uploadForm">
-<input type="file" name="file" required>
-<button>Subir Excel</button>
-</form>
-<br>
-<button onclick="reset()">Resetear entregas</button>
+
+<div class="header">
+  <h2>⚙️ Panel Admin PRO</h2>
+</div>
+
+<div class="container">
+
+<input type="file" id="file">
+<button onclick="subir()">📂 Subir Excel</button>
+
+<hr>
+
+<div id="lista"></div>
+
+<button class="add" onclick="agregar()">➕ Agregar Pedido</button>
+
+</div>
+
 <script>
-document.getElementById('uploadForm').onsubmit=async e=>{
- e.preventDefault();
- const formData=new FormData(e.target);
- await fetch('/upload',{method:'POST',body:formData});
- alert('Excel actualizado ✅');
-};
-async function reset(){await fetch('/reset',{method:'POST'});alert('Estado reiniciado');}
+let datos = [];
+
+async function cargar() {
+  const res = await fetch("/data");
+  datos = await res.json();
+  render();
+}
+
+function render() {
+  const cont = document.getElementById("lista");
+  cont.innerHTML = "";
+
+  datos.forEach((d, i) => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <input value="${d.nombre}" onchange="datos[${i}].nombre=this.value">
+      <input value="${d.cantidad}" type="number" onchange="datos[${i}].cantidad=this.value">
+      <input value="${d.lugar}" onchange="datos[${i}].lugar=this.value">
+      <input value="${d.hora}" onchange="datos[${i}].hora=this.value">
+
+      <button class="save" onclick="guardar()">💾 Guardar</button>
+      <button class="delete" onclick="eliminar(${i})">🗑️ Eliminar</button>
+    `;
+
+    cont.appendChild(div);
+  });
+}
+
+async function guardar() {
+  await fetch("/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(datos)
+  });
+
+  alert("Guardado ✅");
+}
+
+function eliminar(index) {
+  datos.splice(index, 1);
+  render();
+}
+
+function agregar() {
+  datos.push({
+    nombre: "nuevo",
+    cantidad: 1,
+    lugar: "",
+    hora: "12:00"
+  });
+  render();
+}
+
+async function subir() {
+  const file = document.getElementById("file").files[0];
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await fetch("/upload", {
+    method: "POST",
+    body: formData
+  });
+
+  cargar();
+}
+
+cargar();
 </script>
+
 </body>
 </html>
