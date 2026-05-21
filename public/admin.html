@@ -161,5 +161,43 @@ async function subir() {
 cargar();
 </script>
 
+<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&callback=initMap" async defer></script>
+
+
+  
 </body>
 </html>
+
+<script>
+let map;
+let marker;
+
+function initMap() {
+  const defaultLocation = { lat: -12.0464, lng: -77.0428 }; // Lima
+
+  map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 13,
+    center: defaultLocation,
+  });
+
+  marker = new google.maps.Marker({
+    position: defaultLocation,
+    map: map,
+    draggable: true
+  });
+
+  map.addListener("click", (e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+
+    marker.setPosition(e.latLng);
+
+    document.getElementById("lat").innerText = lat;
+    document.getElementById("lng").innerText = lng;
+
+    // guardamos en el objeto actual
+    datos[0].lugar = `${lat},${lng}`;
+  });
+}
+</script>
+``
