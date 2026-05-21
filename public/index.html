@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ruta de Entregas</title>
+<style>
+body { margin:0; font-family: Arial; background:#f4f6f9; }
+.header { background:#1f7a63; color:white; padding:20px; }
+.kpis { display:flex; gap:10px; margin-top:10px; }
+.kpi { flex:1; background:#2c8c72; padding:10px; border-radius:10px; text-align:center; }
+.kpi span { font-size:22px; display:block; }
+.container { padding:10px; }
+.card { background:white; border-radius:15px; padding:15px; margin-bottom:10px; box-shadow:0 2px 5px rgba(0,0,0,0.1);} 
+.top { display:flex; justify-content:space-between; }
+.badge { background:#d1f2eb; padding:5px 10px; border-radius:10px; }
+.info { display:flex; justify-content:space-between; margin-top:10px; }
+.btn { padding:8px 12px; border:none; border-radius:10px; cursor:pointer; }
+.waze { background:#33b5e5; color:white; }
+.entregar { width:100%; margin-top:10px; background:#1f7a63; color:white; }
+.entregado { background:#a5d6a7; }
+</style>
+</head>
+<body>
+<div class="header">
+<h3>🚚 Ruta de Entregas</h3>
+<div class="kpis">
+<div class="kpi"><span id="totalPedidos">0</span>Pedidos</div>
+<div class="kpi"><span id="totalCantidad">0</span>Porciones</div>
+<div class="kpi"><span id="pendientes">0</span>Pendientes</div>
+</div>
+</div>
+<div class="container" id="lista"></div>
+<script>
+async function cargar(){
+const res=await fetch('/data');
+const data=await res.json();
+const cont=document.getElementById('lista');
+cont.innerHTML='';
+let totalCantidad=0, pendientes=0;
+
+data.forEach((r,i)=>{
+totalCantidad+=r.cantidad;
+if(!r.entregado) pendientes++;
+const div=document.createElement('div');
+div.className='card';
+if(r.entregado) div.classList.add('entregado');
+
+div.innerHTML=`
+<div class="top">
+<div><b>${i+1}. ${r.nombre}</b><br><small>Entrega programada</small></div>
+<div class="badge">${r.hora}</div>
+</div>
+<div class="info">
+<span>🍗 ${r.cantidad}</span>
+<a href="https://waze.com/ul?url=${r.lugar}" target="_blank">
+<button class="btn waze">📍 Ir</button>
+</a>
+</div>
+${r.entregado ? `<button class="btn entregar">✅ Entregado</button>` : `<button class="btn entregar" onclick="entregar(${r.id})">Marcar como entregado</button>`}`;
+cont.appendChild(div);
+});
+
+document.getElementById('totalPedidos').innerText=data.length;
+document.getElementById('totalCantidad').innerText=totalCantidad;
+document.getElementById('pendientes').innerText=pendientes;
+}
+
+async function entregar(id){await fetch(`/entregado/${id}`,{method:'POST'});cargar();}
+cargar();setInterval(cargar,5000);
+</script>
+</body>
+</html>

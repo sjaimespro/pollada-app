@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Admin</title></head>
+<body>
+<h2>Panel Admin</h2>
+<form id="uploadForm">
+<input type="file" name="file" required>
+<button>Subir Excel</button>
+</form>
+<br>
+<button onclick="reset()">Resetear entregas</button>
+<script>
+document.getElementById('uploadForm').onsubmit=async e=>{
+ e.preventDefault();
+ const formData=new FormData(e.target);
+ await fetch('/upload',{method:'POST',body:formData});
+ alert('Excel actualizado ✅');
+};
+async function reset(){await fetch('/reset',{method:'POST'});alert('Estado reiniciado');}
+</script>
+</body>
+</html>
