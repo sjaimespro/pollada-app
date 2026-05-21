@@ -57,3 +57,7 @@ app.post("/reset", (req, res) => {
 app.listen(3000, () => {
   console.log("Servidor en http://localhost:3000");
 });
+app.post("/update", (req, res) => {
+  data = req.body;
+  res.send("Actualizado ✅");
+});
