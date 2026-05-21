@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Admin PRO</title>
 
 <style>
 body {
-  font-family: Arial;
   margin: 0;
+  font-family: Arial;
   background: #f4f6f9;
 }
 
@@ -22,50 +21,46 @@ body {
 
 .container {
   padding: 10px;
+  max-width: 600px;
+  margin: auto;
 }
 
 .card {
   background: white;
+  border-radius: 12px;
   padding: 10px;
-  border-radius: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
 }
 
 input {
   width: 100%;
   padding: 8px;
-  margin-top: 5px;
-  margin-bottom: 5px;
+  margin: 5px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.map {
+  height: 200px;
+  margin-top: 8px;
+  border-radius: 10px;
 }
 
 button {
+  width: 100%;
   padding: 10px;
   border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.save {
-  background: #1f7a63;
-  color: white;
-  width: 100%;
-}
-
-.delete {
-  background: red;
-  color: white;
-  width: 100%;
+  border-radius: 10px;
   margin-top: 5px;
+  font-size: 14px;
 }
 
-.add {
-  background: #007bff;
-  color: white;
-  width: 100%;
-  margin-top: 10px;
-}
+.save { background:#1f7a63; color:white; }
+.delete { background:red; color:white; }
+.add { background:#007bff; color:white; }
+.upload { background:#ff9800; color:white; }
 </style>
-
 </head>
 
 <body>
@@ -77,7 +72,7 @@ button {
 <div class="container">
 
 <input type="file" id="file">
-<button onclick="subir()">📂 Subir Excel</button>
+<button class="upload" onclick="subir()">📂 Subir Excel</button>
 
 <hr>
 
@@ -89,6 +84,7 @@ button {
 
 <script>
 let datos = [];
+let maps = [];
 
 async function cargar() {
   const res = await fetch("/data");
@@ -99,39 +95,79 @@ async function cargar() {
 function render() {
   const cont = document.getElementById("lista");
   cont.innerHTML = "";
+  maps = [];
 
   datos.forEach((d, i) => {
+
     const div = document.createElement("div");
     div.className = "card";
 
     div.innerHTML = `
       <input value="${d.nombre}" onchange="datos[${i}].nombre=this.value">
-      <input value="${d.cantidad}" type="number" onchange="datos[${i}].cantidad=this.value">
-      <input value="${d.lugar}" onchange="datos[${i}].lugar=this.value">
+      <input type="number" value="${d.cantidad}" onchange="datos[${i}].cantidad=this.value">
+      <input placeholder="lat,lng" value="${d.lugar}" onchange="datos[${i}].lugar=this.value">
       <input value="${d.hora}" onchange="datos[${i}].hora=this.value">
-      <div id="map" style="height:300px; margin-top:10px;"></div>
-      <p>Lat: <span id="lat"></span> | Lng: <span id="lng"></span></p>
+
+      <div id="map${i}" class="map"></div>
 
       <button class="save" onclick="guardar()">💾 Guardar</button>
       <button class="delete" onclick="eliminar(${i})">🗑️ Eliminar</button>
     `;
 
     cont.appendChild(div);
+
+    setTimeout(() => initMap(i, d.lugar), 200);
   });
+}
+
+function initMap(i, lugar) {
+  let lat = -12.0464;
+  let lng = -77.0428;
+
+  if (lugar && lugar.includes(",")) {
+    const parts = lugar.split(",");
+    lat = parseFloat(parts[0]);
+    lng = parseFloat(parts[1]);
+  }
+
+  const map = new google.maps.Map(document.getElementById("map"+i), {
+    center: { lat, lng },
+    zoom: 14,
+  });
+
+  const marker = new google.maps.Marker({
+    position: { lat, lng },
+    map: map,
+    draggable: true
+  });
+
+  map.addListener("click", (e) => {
+    const newLat = e.latLng.lat();
+    const newLng = e.latLng.lng();
+
+    marker.setPosition(e.latLng);
+    datos[i].lugar = `${newLat},${newLng}`;
+  });
+
+  marker.addListener("dragend", (e) => {
+    datos[i].lugar = `${e.latLng.lat()},${e.latLng.lng()}`;
+  });
+
+  maps.push(map);
 }
 
 async function guardar() {
   await fetch("/update", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify(datos)
   });
 
   alert("Guardado ✅");
 }
 
-function eliminar(index) {
-  datos.splice(index, 1);
+function eliminar(i) {
+  datos.splice(i,1);
   render();
 }
 
@@ -139,7 +175,7 @@ function agregar() {
   datos.push({
     nombre: "nuevo",
     cantidad: 1,
-    lugar: "",
+    lugar: "-12.0464,-77.0428",
     hora: "12:00"
   });
   render();
@@ -161,43 +197,8 @@ async function subir() {
 cargar();
 </script>
 
-<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&callback=initMap" async defer></script>
+<!-- ✅ API GOOGLE MAPS -->
+<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY"></script>
 
-
-  
 </body>
 </html>
-
-<script>
-let map;
-let marker;
-
-function initMap() {
-  const defaultLocation = { lat: -12.0464, lng: -77.0428 }; // Lima
-
-  map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 13,
-    center: defaultLocation,
-  });
-
-  marker = new google.maps.Marker({
-    position: defaultLocation,
-    map: map,
-    draggable: true
-  });
-
-  map.addListener("click", (e) => {
-    const lat = e.latLng.lat();
-    const lng = e.latLng.lng();
-
-    marker.setPosition(e.latLng);
-
-    document.getElementById("lat").innerText = lat;
-    document.getElementById("lng").innerText = lng;
-
-    // guardamos en el objeto actual
-    datos[0].lugar = `${lat},${lng}`;
-  });
-}
-</script>
-``
