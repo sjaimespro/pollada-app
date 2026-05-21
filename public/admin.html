@@ -109,6 +109,8 @@ function render() {
       <input value="${d.cantidad}" type="number" onchange="datos[${i}].cantidad=this.value">
       <input value="${d.lugar}" onchange="datos[${i}].lugar=this.value">
       <input value="${d.hora}" onchange="datos[${i}].hora=this.value">
+      <div id="map" style="height:300px; margin-top:10px;"></div>
+      <p>Lat: <span id="lat"></span> | Lng: <span id="lng"></span></p>
 
       <button class="save" onclick="guardar()">💾 Guardar</button>
       <button class="delete" onclick="eliminar(${i})">🗑️ Eliminar</button>
