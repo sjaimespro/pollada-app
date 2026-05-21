@@ -5,55 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin PRO</title>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
 <style>
 body {
-  margin: 0;
+  margin:0;
   font-family: Arial;
-  background: #f4f6f9;
+  background:#f4f6f9;
 }
 
 .header {
-  background: #1f7a63;
-  color: white;
-  padding: 15px;
-  text-align: center;
+  background:#1f7a63;
+  color:white;
+  padding:15px;
+  text-align:center;
 }
 
 .container {
-  padding: 10px;
-  max-width: 600px;
-  margin: auto;
+  padding:10px;
+  max-width:600px;
+  margin:auto;
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
-  padding: 10px;
-  margin-bottom: 15px;
-  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+  background:white;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:15px;
 }
 
 input {
-  width: 100%;
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 8px;
-  border: 1px solid #ccc;
+  width:100%;
+  padding:8px;
+  margin:5px 0;
 }
 
 .map {
-  height: 200px;
-  margin-top: 8px;
-  border-radius: 10px;
+  height:200px;
+  margin-top:8px;
+  border-radius:10px;
 }
 
 button {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 10px;
-  margin-top: 5px;
-  font-size: 14px;
+  width:100%;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  margin-top:5px;
 }
 
 .save { background:#1f7a63; color:white; }
@@ -66,7 +64,7 @@ button {
 <body>
 
 <div class="header">
-  <h2>⚙️ Panel Admin PRO</h2>
+<h2>⚙️ Admin PRO (Mapa libre)</h2>
 </div>
 
 <div class="container">
@@ -82,9 +80,10 @@ button {
 
 </div>
 
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
 <script>
 let datos = [];
-let maps = [];
 
 async function cargar() {
   const res = await fetch("/data");
@@ -95,7 +94,6 @@ async function cargar() {
 function render() {
   const cont = document.getElementById("lista");
   cont.innerHTML = "";
-  maps = [];
 
   datos.forEach((d, i) => {
 
@@ -116,44 +114,39 @@ function render() {
 
     cont.appendChild(div);
 
-    setTimeout(() => initMap(i, d.lugar), 200);
+    setTimeout(() => crearMapa(i, d.lugar), 100);
   });
 }
 
-function initMap(i, lugar) {
+function crearMapa(i, lugar) {
+
   let lat = -12.0464;
   let lng = -77.0428;
 
   if (lugar && lugar.includes(",")) {
-    const parts = lugar.split(",");
-    lat = parseFloat(parts[0]);
-    lng = parseFloat(parts[1]);
+    const p = lugar.split(",");
+    lat = parseFloat(p[0]);
+    lng = parseFloat(p[1]);
   }
 
-  const map = new google.maps.Map(document.getElementById("map"+i), {
-    center: { lat, lng },
-    zoom: 14,
+  const map = L.map("map"+i).setView([lat, lng], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'OpenStreetMap'
+  }).addTo(map);
+
+  const marker = L.marker([lat, lng], {draggable:true}).addTo(map);
+
+  map.on("click", function(e){
+    const {lat, lng} = e.latlng;
+    marker.setLatLng(e.latlng);
+    datos[i].lugar = `${lat},${lng}`;
   });
 
-  const marker = new google.maps.Marker({
-    position: { lat, lng },
-    map: map,
-    draggable: true
+  marker.on("dragend", function(e){
+    const pos = e.target.getLatLng();
+    datos[i].lugar = `${pos.lat},${pos.lng}`;
   });
-
-  map.addListener("click", (e) => {
-    const newLat = e.latLng.lat();
-    const newLng = e.latLng.lng();
-
-    marker.setPosition(e.latLng);
-    datos[i].lugar = `${newLat},${newLng}`;
-  });
-
-  marker.addListener("dragend", (e) => {
-    datos[i].lugar = `${e.latLng.lat()},${e.latLng.lng()}`;
-  });
-
-  maps.push(map);
 }
 
 async function guardar() {
@@ -162,7 +155,6 @@ async function guardar() {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify(datos)
   });
-
   alert("Guardado ✅");
 }
 
@@ -173,10 +165,10 @@ function eliminar(i) {
 
 function agregar() {
   datos.push({
-    nombre: "nuevo",
-    cantidad: 1,
-    lugar: "-12.0464,-77.0428",
-    hora: "12:00"
+    nombre:"nuevo",
+    cantidad:1,
+    lugar:"-12.0464,-77.0428",
+    hora:"12:00"
   });
   render();
 }
@@ -187,8 +179,8 @@ async function subir() {
   formData.append("file", file);
 
   await fetch("/upload", {
-    method: "POST",
-    body: formData
+    method:"POST",
+    body:formData
   });
 
   cargar();
@@ -197,8 +189,6 @@ async function subir() {
 cargar();
 </script>
 
-<!-- ✅ API GOOGLE MAPS -->
-<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY"></script>
-
 </body>
 </html>
+
